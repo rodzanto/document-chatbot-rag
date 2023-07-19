@@ -7,5 +7,5 @@ The notebook explains the process for ingesting documents to the vector/embeddin
 * Vector database used: Pinecone
 * LLM: Amazon Bedrock - Anthropics Claude
 
-![Sample Diagram](sample_diagram.png)
+![Sample Diagram](./images/sample_diagram.png)
 
