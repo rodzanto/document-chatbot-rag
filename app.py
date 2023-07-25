@@ -34,7 +34,7 @@ bedrock_embeddings = BedrockEmbeddings(client=bedrock)
 
 import pinecone
 # find API key in console at app.pinecone.io
-YOUR_API_KEY = "c8f831ec-e5ab-43a0-a6c8-ac62364a192e" 
+YOUR_API_KEY = "REPLACE WITH YOUR OWN API KEY" ###REPLACE WITH YOUR OWN API KEY
 # find ENV (cloud region) next to API key in console
 YOUR_ENV = "us-west4-gcp-free" 
 index_name = 'langchain-retrieval-agent'
