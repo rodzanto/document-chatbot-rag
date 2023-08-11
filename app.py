@@ -1,4 +1,3 @@
-
 import streamlit as st
 from streamlit_chat import message
 from langchain.llms.bedrock import Bedrock
@@ -13,6 +12,7 @@ from random import randint
 import boto3
 from langchain import PromptTemplate
 
+
 st.set_page_config(page_title="Retrieval Augmented Generation", page_icon=":robot:", layout="wide")
 st.header("Document Insights Chatbot with Amazon Bedrock")
 
@@ -22,26 +22,18 @@ bedrock = boto3.client(
  endpoint_url='https://bedrock.us-east-1.amazonaws.com'
 )
 
-# PINECONE ------------
+# KENDRA ------------
 
-# We will be using the Titan Embeddings Model to generate our Embeddings.
-from langchain.embeddings import BedrockEmbeddings
+from langchain.retrievers import AmazonKendraRetriever
 from langchain.llms.bedrock import Bedrock
 
-# - create the Anthropic Model
-llm = Bedrock(model_id="anthropic.claude-v1", client=bedrock, model_kwargs={'max_tokens_to_sample':8000})
-bedrock_embeddings = BedrockEmbeddings(client=bedrock)
+kendra_index_id = '2c1575af-b7aa-44cb-ae01-454598936576'
+region = 'us-east-1'
 
-import pinecone
-# find API key in console at app.pinecone.io
-YOUR_API_KEY = "REPLACE WITH YOUR OWN API KEY" ###REPLACE WITH YOUR OWN API KEY
-# find ENV (cloud region) next to API key in console
-YOUR_ENV = "us-west4-gcp-free" 
-index_name = 'langchain-retrieval-agent'
-pinecone.init(
-    api_key=YOUR_API_KEY,
-    environment=YOUR_ENV
-)
+kendra_client = boto3.client('kendra')
+
+# - create the Anthropic Model
+llm = Bedrock(model_id="anthropic.claude-v2", client=bedrock, model_kwargs={'max_tokens_to_sample':8000})
 
 from langchain.chains.question_answering import load_qa_chain
 from langchain.vectorstores import Pinecone
@@ -75,6 +67,27 @@ prompt = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
+
+qa = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",
+    retriever=AmazonKendraRetriever(
+        index_id=kendra_index_id,
+        region_name=region,
+        client=kendra_client,
+        #attribute_filter={
+        #    'EqualsTo': {
+        #        'Key': '_language_code',
+        #        'Value': {'StringValue': 'es'}
+        #    }
+        #}
+    ),
+    return_source_documents=True,
+    chain_type_kwargs={"prompt": PROMPT},
+)
+
+
+
 #@st.cache_resource
 #def load_chain(_prompt):
 chatchain = RetrievalQA.from_chain_type(
@@ -90,8 +103,16 @@ chatchain = RetrievalQA.from_chain_type(
             }
         ),
         chain_type="stuff",
-        retriever=vectorstore_pinecone.as_retriever(
-            search_type="similarity", search_kwargs={"k": 4}
+        retriever=AmazonKendraRetriever(
+            index_id=kendra_index_id,
+            region_name=region,
+            client=kendra_client,
+            #attribute_filter={
+            #    'EqualsTo': {
+            #        'Key': '_language_code',
+            #        'Value': {'StringValue': 'es'}
+            #    }
+            #}
         ),
         return_source_documents=True,
         chain_type_kwargs={"prompt": prompt}
@@ -112,8 +133,7 @@ if 'widget_key' not in st.session_state:
 
 # Sidebar - the clear button is will flush the memory of the conversation
 #st.sidebar.title("Sidebar")
-#st.sidebar.image('./images/AWS_logo_RGB.png', width=150)
-st.sidebar.image('./images/miniclip_logo.png', width=150)
+st.sidebar.image('./images/AWS_logo_RGB.png', width=150)
 
 st.markdown(
     f'''
