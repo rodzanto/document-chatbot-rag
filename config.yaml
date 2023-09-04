@@ -1,0 +1,12 @@
+credentials:
+  usernames:
+    awsdemouser:
+      name: AWS Demo User
+      password: $2b$12$U84Zs9eC3evwc4R9fQwOnunRQVp7Y/p58PpcQBomhBlR3MJRyLcnu
+
+cookie:
+  expiry_days: 30
+  key: random_signature_key
+  name: random_cookie_name
+preauthorized:
+  emails:

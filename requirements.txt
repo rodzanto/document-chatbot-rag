@@ -1,0 +1,5 @@
+streamlit
+langchain
+streamlit_chat
+boto3
+streamlit-authenticator

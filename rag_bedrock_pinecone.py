@@ -12,7 +12,6 @@ from random import randint
 import boto3
 from langchain import PromptTemplate
 
-
 st.set_page_config(page_title="Retrieval Augmented Generation", page_icon=":robot:", layout="wide")
 st.header("Document Insights Chatbot with Amazon Bedrock")
 
@@ -22,18 +21,26 @@ bedrock = boto3.client(
  endpoint_url='https://bedrock.us-east-1.amazonaws.com'
 )
 
-# KENDRA ------------
+# PINECONE ------------
 
-from langchain.retrievers import AmazonKendraRetriever
+# We will be using the Titan Embeddings Model to generate our Embeddings.
+from langchain.embeddings import BedrockEmbeddings
 from langchain.llms.bedrock import Bedrock
-
-kendra_index_id = '2c1575af-b7aa-44cb-ae01-454598936576'
-region = 'us-east-1'
-
-kendra_client = boto3.client('kendra')
 
 # - create the Anthropic Model
 llm = Bedrock(model_id="anthropic.claude-v2", client=bedrock, model_kwargs={'max_tokens_to_sample':8000})
+bedrock_embeddings = BedrockEmbeddings(client=bedrock)
+
+import pinecone
+# find API key in console at app.pinecone.io
+YOUR_API_KEY = "REPLACE WITH YOUR OWN API KEY" 
+# find ENV (cloud region) next to API key in console
+YOUR_ENV = "us-west4-gcp-free" 
+index_name = 'langchain-retrieval-agent'
+pinecone.init(
+    api_key=YOUR_API_KEY,
+    environment=YOUR_ENV
+)
 
 from langchain.chains.question_answering import load_qa_chain
 from langchain.vectorstores import Pinecone
@@ -67,27 +74,6 @@ prompt = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
-
-qa = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=AmazonKendraRetriever(
-        index_id=kendra_index_id,
-        region_name=region,
-        client=kendra_client,
-        #attribute_filter={
-        #    'EqualsTo': {
-        #        'Key': '_language_code',
-        #        'Value': {'StringValue': 'es'}
-        #    }
-        #}
-    ),
-    return_source_documents=True,
-    chain_type_kwargs={"prompt": PROMPT},
-)
-
-
-
 #@st.cache_resource
 #def load_chain(_prompt):
 chatchain = RetrievalQA.from_chain_type(
@@ -103,16 +89,8 @@ chatchain = RetrievalQA.from_chain_type(
             }
         ),
         chain_type="stuff",
-        retriever=AmazonKendraRetriever(
-            index_id=kendra_index_id,
-            region_name=region,
-            client=kendra_client,
-            #attribute_filter={
-            #    'EqualsTo': {
-            #        'Key': '_language_code',
-            #        'Value': {'StringValue': 'es'}
-            #    }
-            #}
+        retriever=vectorstore_pinecone.as_retriever(
+            search_type="similarity", search_kwargs={"k": 4}
         ),
         return_source_documents=True,
         chain_type_kwargs={"prompt": prompt}
