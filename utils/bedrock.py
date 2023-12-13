@@ -9,7 +9,7 @@ from typing import Dict, Optional
 # External Dependencies:
 import boto3
 from botocore.config import Config
-from pydantic import model_validator
+#from pydantic import model_validator
 
 
 def get_bedrock_client(
@@ -170,11 +170,6 @@ class Bedrock:
             assert str(type(client)) == "<class 'botocore.client.Bedrock'>", f"The client passed in not a valid boto3 bedrock client, got {type(client)}"
             self.client = client
 
-    @model_validator(mode='wrap')
-    def validate_environment(cls, values: Dict) -> Dict:
-        bedrock_client = get_bedrock_client(assumed_role=None) #boto3.client("bedrock")
-        values["client"] = bedrock_client
-        return values
 
     def generate_image(self, prompt: str, init_image: Optional[str] = None, **kwargs):
         """
